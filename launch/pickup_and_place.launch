@@ -1,15 +1,10 @@
 <launch>
-	<!-- This launch script does everything up to actually starting the planner. When launching the planner from this launch script, the
-		robot would "spaz" out, I tried to fix this by adding pauses and making sure the manual_init node had been killed
-		(which requires use of shell scripts, as you can't kill nodes here) but this did not fix the issue. I believe because
-		these statements are not guarenteed to be executed synchronously. I'm still going to use this to launch many of these prereq nodes,
-		but will start the planner by hand.
-		
-		Make sure when I run MY manual_init node the movements look fine for the actual hardware? might want to swap to his, would have to redo
-		figuring out all the points but that wouldn't be too bad.
+	<!-- This launch script does everything up to running the manual_initialization node. 
+ 		You can't guarentee the order these statements will be executed in, it was causing issues.
+		Workflow: Run this script, run the manual init node, kill the manual init node, run the other launchfile in this dir.
 	-->
 
-	<!-- First, run the bag file. Must keep a copy in the package.  -->
+	<!-- First, run the bag file. Paths assume a copy is kept in the report2 package.  -->
 	<node pkg="report2" type="play_data.sh" name="play_data" required="true"/>
 	
 	<!-- Don't use file extensions when calling CPP nodes -->
@@ -26,14 +21,5 @@
 	
 	<!--Launch gazebo to visualize.-->
 	<include file="$(find ur_gazebo)/launch/ur5e_bringup.launch" />
-	
-	<!-- <node pkg="report2" type="pause.sh" name="pause1"/> -->
-	
-	<!-- now call manual init script. Gotta do this by hand and then kill it before proceeding. -->
-	<!-- <node pkg="ur5e_control" type="manual_initialization.py" name="manual_initialization" required="true"/> -->
-	
-	<!-- kill the manual init node before continuing. This is not working, I believe due to async stuff too.-->
-	<!-- <node pkg="report2" type="kill_manual_init.sh" name="kill_manual_init" required="true" /> -->
-	<!-- <node pkg="report2" type="pause.sh" name="pause3"/> -->
 </launch>
 
