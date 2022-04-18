@@ -1,0 +1,39 @@
+<launch>
+	<!-- This launch script does everything up to actually starting the planner. When launching the planner from this launch script, the
+		robot would "spaz" out, I tried to fix this by adding pauses and making sure the manual_init node had been killed
+		(which requires use of shell scripts, as you can't kill nodes here) but this did not fix the issue. I believe because
+		these statements are not guarenteed to be executed synchronously. I'm still going to use this to launch many of these prereq nodes,
+		but will start the planner by hand.
+		
+		Make sure when I run MY manual_init node the movements look fine for the actual hardware? might want to swap to his, would have to redo
+		figuring out all the points but that wouldn't be too bad.
+	-->
+
+	<!-- First, run the bag file. Must keep a copy in the package.  -->
+	<node pkg="report2" type="play_data.sh" name="play_data" required="true"/>
+	
+	<!-- Don't use file extensions when calling CPP nodes -->
+	<node pkg="robot_vision_lectures" type="crop_visualize_3D" name="crop_visualize_3D" required="true" />
+	
+	<!-- Then run rviz to visualize. Just for debugging, not needed for task.-->
+	<!-- <node pkg="rviz" type="rviz" name="rviz" args="-d $(find robot_vision_lectures)/rviz/ball.rviz"/> -->
+	
+	<!-- Then run the detect ball node -->
+	<node pkg="robotics_lab4" type="detect_ball.py" name="detect_ball" required="true"/>
+	
+	<!-- now node from lab 6, then init, then planner (add pausing to planner.)? -->
+	<node pkg="robotics_lab6" type="sphere_fit.py" name="sphere_fit" required="true"/>
+	
+	<!--Launch gazebo to visualize.-->
+	<include file="$(find ur_gazebo)/launch/ur5e_bringup.launch" />
+	
+	<!-- <node pkg="report2" type="pause.sh" name="pause1"/> -->
+	
+	<!-- now call manual init script. Gotta do this by hand and then kill it before proceeding. -->
+	<!-- <node pkg="ur5e_control" type="manual_initialization.py" name="manual_initialization" required="true"/> -->
+	
+	<!-- kill the manual init node before continuing. This is not working, I believe due to async stuff too.-->
+	<!-- <node pkg="report2" type="kill_manual_init.sh" name="kill_manual_init" required="true" /> -->
+	<!-- <node pkg="report2" type="pause.sh" name="pause3"/> -->
+</launch>
+

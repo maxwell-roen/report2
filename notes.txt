@@ -1,0 +1,28 @@
+launchfiles can serve as a step by step guide to necessary parts to get this working when writing report.
+
+
+As far as the launchfile stuff:
+	pkg -> the package name
+	type -> the node name. not sure if this needs file extension for .py
+	required -> whether or not to shut everything down if a node can't launch
+	respawn -> will attempt to relaunch a node if it can't be launched or closes later
+	name -> is required, can overwrite the type param, or just use the same thing I guess?
+		
+		
+Keep the planner clean. We'll be doing a ton of work in here over the next few weeks.
+
+
+okay so current workflow is:
+	run the first launchfile (pickup_and_place.launch)
+	manually run the manual_init script, kill it
+	run the second launchfile (pickup2.launch)
+	
+	because I can't figure out the whole async thing/it's an issue.
+	
+	
+So questions:
+	what do we need the quaternion for? it doesn't appear to be doing anything/isn't directly called anywhere/passed anywhere.
+	Or can I use that roll, pitch, yaw to figure out how to orient the tool?
+	
+	tremors/spazzing out issues, obviously an issue.
+

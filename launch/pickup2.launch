@@ -1,0 +1,6 @@
+<launch>
+	<node pkg="ur5e_control" type="ur5e_controller" name="ur5e_controller" required="true" />
+	<node pkg="ur5e_control" type="task_space_traj" name="task_space_traj" required="true" />
+	<include file="$(find ur5e_control)/launch/frame_publisher.launch" />
+	<node pkg="rviz" type="rviz" name="rviz" args="-d $(find ur5e_control)/rviz/robot_ball.rviz"/>
+</launch>
