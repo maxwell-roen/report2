@@ -25,4 +25,7 @@ So questions:
 	Or can I use that roll, pitch, yaw to figure out how to orient the tool?
 	
 	tremors/spazzing out issues, obviously an issue.
+	
+	There seems to be a disconnect between what I'm seeing in Rviz vs Gazebo?
+		Is this just down to performance issues in the container? Or is something else going on?
 
