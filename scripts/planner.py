@@ -6,7 +6,6 @@ import tf2_ros
 import tf2_geometry_msgs
 
 from tf.transformations import *
-from geometry_msgs.msg import Quaternion
 from ur5e_control.msg import Plan
 from geometry_msgs.msg import Twist
 from robot_vision_lectures.msg import SphereParams
@@ -54,9 +53,8 @@ if __name__ == '__main__':
 	# add stuff for the ROS transform listener:
 	tfBuffer = tf2_ros.Buffer()
 	listener = tf2_ros.TransformListener(tfBuffer)
-	#q_rot = Quaternion()	
-	# set a 10Hz frequency for this loop
-	loop_rate = rospy.Rate(10)
+	# try slowing this down a bit, see if this fixes our issues...
+	loop_rate = rospy.Rate(3)
 
 	# define a plan variable
 	plan = Plan()
@@ -72,16 +70,6 @@ if __name__ == '__main__':
 			loop_rate.sleep()
 			continue
 		
-		# extract coords
-		x = trans.transform.translation.x
-		y = trans.transform.translation.y
-		z = trans.transform.translation.z
-		
-		# do we even need this? This never gets used anywhere?
-		# extract quaternion, convert to RPY
-		#q_rot = trans.transform.rotation
-		# last comma causes argument unpacking? try with.
-		#roll, pitch, yaw, = euler_from_quaternion([q_rot.x, q_rot.y, q_rot.z, q_rot.w])
 		
 		# now declare a point that represents the ball's position in the camera frame
 		ball_in_camera_frame = tf2_geometry_msgs.PointStamped()
@@ -91,28 +79,42 @@ if __name__ == '__main__':
 		ball_in_camera_frame.point.x = estimated_x_pos
 		ball_in_camera_frame.point.y = estimated_y_pos
 		ball_in_camera_frame.point.z = estimated_z_pos
+		#print(f'x: {estimated_x_pos}\ny: {estimated_y_pos}\nz: {estimated_z_pos}')
 		
 		# now convert the ball to the base frame:
 		ball_in_base_frame = tfBuffer.transform(ball_in_camera_frame, 'base', rospy.Duration(1.0))
+		print(ball_in_base_frame)
 		
 		# we now have everything we need to define the pts for the plan
 		# try to get this working without worrying about angular coordinates atm.
-		initial_pt = create_new_pt(-0.7, -0.23, 0.363, 1.57, 0.0, 0.0)
+		
+		# these values were copied in from the manual init script. don't seem to work well?
+		initial_pt = create_new_pt(-1.47, -1.79, -1.28, 1.71, -1.58, -1.24)
+		# try with the shown values in gazebo:
+		# yeah it looks like confusingly the order is swapped on some of these? okay, let's move forward...
+		#initial_pt = create_new_pt(-1.28, -1.79, -1.47, 1.70, -1.58, -1.24)
 		plan.points.append(initial_pt)
 		
+		# so yeah I have no idea what is happening here. is is that my estimate of the ball position is off?
+		# or my initial starting position is bad? unsure. stuck with spazzy robot.
 		# go to ball center
-		above_ball_pt = create_new_pt(ball_in_base_frame.point.x, ball_in_base_frame.point.y, ball_in_base_frame.point.z, 1.57, 0.0, 0.0)
-		plan.points.append(above_ball_pt)
+		ball_center_pt = create_new_pt(ball_in_base_frame.point.x, ball_in_base_frame.point.y, ball_in_base_frame.point.z, 1.71, -1.58, -1.24)
+		plan.points.append(ball_center_pt)
+		
+		# okay so let's just make sure this isn't causing a crash. if it isn't, define drop pts closer to the current position.
+		# figure out how to echo out current joint state?
+		# okay so that IS causing a crash watching in gazebo, even though it looks good in rviz. need a better initial state, I think.
+		# try using his real_robot init script, change lines for real->sim
 		
 		# let's say the initial pt is above the drop pt, go back there
-		plan.points.append(initial_pt)
+		#plan.points.append(initial_pt)
 	
 		# then just go down to the drop pt
-		drop_pt = create_new_pt(0.98, -0.54, 0.0, 1.57, 0.0, 0.0)
-		plan.points.append(drop_pt)
+		#drop_pt = create_new_pt(0.98, -0.54, 0.0, 1.71, -1.58, -1.24)
+		#plan.points.append(drop_pt)
 		
 		# then back to the initial pt
-		plan.points.append(initial_pt)
+		#plan.points.append(initial_pt)
 			
 		# publish the plan
 		plan_pub.publish(plan)
