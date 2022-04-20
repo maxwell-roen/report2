@@ -10,9 +10,6 @@
 	<!-- Don't use file extensions when calling CPP nodes -->
 	<node pkg="robot_vision_lectures" type="crop_visualize_3D" name="crop_visualize_3D" required="true" />
 	
-	<!-- Then run rviz to visualize. Just for debugging, not needed for task.-->
-	<!-- <node pkg="rviz" type="rviz" name="rviz" args="-d $(find robot_vision_lectures)/rviz/ball.rviz"/> -->
-	
 	<!-- Then run the detect ball node -->
 	<node pkg="robotics_lab4" type="detect_ball.py" name="detect_ball" required="true"/>
 	

@@ -6,7 +6,6 @@ import tf2_ros
 import tf2_geometry_msgs
 
 from tf.transformations import *
-from geometry_msgs.msg import Quaternion
 from ur5e_control.msg import Plan
 from geometry_msgs.msg import Twist
 from robot_vision_lectures.msg import SphereParams
@@ -36,18 +35,16 @@ if __name__ == '__main__':
 	# add a publisher for sending joint position commands
 	plan_pub = rospy.Publisher('/plan', Plan, queue_size = 10)
 	# set a 10Hz frequency for this loop
-	loop_rate = rospy.Rate(10)
+	loop_rate = rospy.Rate(3)
 
 	# define a plan variable
 	plan = Plan()
 	
-	# initial pts from his code:
-	initial_pt = create_new_pt(-0.7, -0.23, 0.363, 1.57, 0.0, 0.0)
-	plan.points.append(initial_pt)
-	
-	pt_2 = create_new_pt(-0.6, -0.23, 0.25, 1.57, 0.0, 0.0)
-	plan.points.append(pt_2)
-	
+	# obtained from rostopic echo /ur5e/toolpose
+	plan.points.append(create_new_pt(0.03, 0.52, 0.44, 3.08, 0.06, 0.19))
+	plan.points.append(create_new_pt(0.03, 0.52, 0.09, 3.08, 0.06, 0.19))
+	plan.points.append(create_new_pt(0.18, 0.52, 0.2, 3.08, 0.06, 0.19))
+	plan.points.append(create_new_pt(0.18, 0.52, 0.09, 3.08, 0.06, 0.19))
 	
 
 	while not rospy.is_shutdown():
