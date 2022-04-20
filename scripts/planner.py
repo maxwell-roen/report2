@@ -58,6 +58,7 @@ if __name__ == '__main__':
 
 	# define a plan variable
 	plan = Plan()
+	plan_generated = False
 	
 	# do everything in relation to the base frame?
 	while not rospy.is_shutdown():
@@ -83,25 +84,30 @@ if __name__ == '__main__':
 		# now convert the ball to the base frame:
 		ball_in_base_frame = tfBuffer.transform(ball_in_camera_frame, 'base', rospy.Duration(1.0))
 		
-		
-		# adjust starting pt to be a little closer to being above the ball, see if that helps...
-		initial_pt = create_new_pt(-0.04, 0.52, 0.44, 3.08, 0.06, 0.19)
-		plan.points.append(initial_pt)
-		
-		# go to ball center. causing a freakout proper. see if improving estimation code helps.
-		# okay so I improved 2d estimation noticeably. didn't help overall yet.
-		# improved lab 6 code slightly as well, still isn't perfect but I don't ~think~ that's the issue.
-		# try to make the approach more gradual? add a waypoint in the middle.
-		# looks like I'm adjusting the elbow too much w/o moving the shoulder enough, causing a collision.
-		# try to use the shoulder more or offset elbow movement with more shoulder movement.
-		halfway_pt = create_new_pt(-0.07, 0.61, 0.39, 3.02, 0.06, 0.31)
-		plan.points.append(halfway_pt)
-		
-		# TODO: okay just add another intermediate pt here I guess.
-		ball_center_pt = create_new_pt(ball_in_base_frame.point.x, ball_in_base_frame.point.y, ball_in_base_frame.point.z, 3.08, 0.06, 0.19)
-		plan.points.append(ball_center_pt)
-		
-		# add back in other pts from simple planner once this is working.
+		if not plan_generated:
+			
+			# adjust starting pt to be a little closer to being above the ball, see if that helps...
+			# TODO: add subscriber to ur5e/toolpose instead of manually setting the initial pt.
+			#	do this outside of loop, only read once when you add the subscriber.
+			initial_pt = create_new_pt(-0.014, -0.409, 0.274, 3.126, 0.0166, 1.5308)
+			plan.points.append(initial_pt)
+			
+			above_ball_pt = create_new_pt(ball_in_base_frame.point.x, ball_in_base_frame.point.y, ball_in_base_frame.point.z + 0.1, 3.126, 0.0166, 1.5308)
+			# TODO: add append step to create_new_pt fcn
+			plan.points.append(above_ball_pt)
+			
+			# TODO: okay just add another intermediate pt here I guess.
+			ball_center_pt = create_new_pt(ball_in_base_frame.point.x, ball_in_base_frame.point.y, ball_in_base_frame.point.z+0.02, 3.126, 0.0166, 1.5308)
+			plan.points.append(ball_center_pt)
+			
+			# add back in other pts from simple planner once this is working.
+			above_drop_pt = create_new_pt(ball_in_base_frame.point.x + 0.3, ball_in_base_frame.point.y + 0.1, ball_in_base_frame.point.z+0.2, 3.126, 0.0166, 1.5308)
+			plan.points.append(above_drop_pt)
+			
+			drop_pt = create_new_pt(ball_in_base_frame.point.x + 0.3, ball_in_base_frame.point.y + 0.1, ball_in_base_frame.point.z+0.1, 3.126, 0.0166, 1.5308)
+			
+			plan.points.append(drop_pt)
+			plan_generated = True
 			
 		# publish the plan
 		plan_pub.publish(plan)
