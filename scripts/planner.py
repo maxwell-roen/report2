@@ -11,14 +11,22 @@ from geometry_msgs.msg import Twist
 from robot_vision_lectures.msg import SphereParams
 
 
-estimated_x_pos = 0
-estimated_y_pos = 0
-estimated_z_pos = 0
+ball_estimated_x_pos = 0
+ball_estimated_y_pos = 0
+ball_estimated_z_pos = 0
+
+initial_tool_x_pos = 0
+initial_tool_y_pos = 0
+initial_tool_z_pos = 0
+roll = 0
+pitch = 0
+yaw = 0
 
 
-def create_new_pt(linear_x, linear_y, linear_z, angular_x, angular_y, angular_z):
+# modify this to just add it to the plan, don't return it.
+def create_new_pt(linear_x, linear_y, linear_z, angular_x, angular_y, angular_z, plan):
 	"""
-	Returns a new Twist message with given params.	
+	Adds new Twist message with given params to the given plan.	
 	"""
 	pt = Twist()
 	pt.linear.x = linear_x
@@ -28,19 +36,34 @@ def create_new_pt(linear_x, linear_y, linear_z, angular_x, angular_y, angular_z)
 	pt.angular.y = angular_y
 	pt.angular.z = angular_z
 	
-	return pt
+	plan.points.append(pt)
 
 
 def sphere_params_callback(params):
 	#print(f'xc: {params.xc}, yc: {params.yc}, zc: {params.zc}, radius: {params.radius}')
-	global estimated_x_pos
-	global estimated_y_pos
-	global estimated_z_pos
+	global ball_estimated_x_pos
+	global ball_estimated_y_pos
+	global ball_estimated_z_pos
 	
-	estimated_x_pos = params.xc
-	estimated_y_pos = params.yc
-	estimated_z_pos = params.zc
+	ball_estimated_x_pos = params.xc
+	ball_estimated_y_pos = params.yc
+	ball_estimated_z_pos = params.zc
 
+
+def tool_position_callback(position):
+	global initial_tool_x_pos
+	global initial_tool_y_pos
+	global initial_tool_z_pos
+	global roll
+	global pitch
+	global yaw
+	
+	initial_tool_x_pos = position.linear.x
+	initial_tool_y_pos = position.linear.y
+	initial_tool_z_pos = position.linear.z
+	roll = position.angular.x
+	pitch = position.angular.y
+	yaw = position.angular.z
 
 
 if __name__ == '__main__':
@@ -53,6 +76,8 @@ if __name__ == '__main__':
 	# add stuff for the ROS transform listener:
 	tfBuffer = tf2_ros.Buffer()
 	listener = tf2_ros.TransformListener(tfBuffer)
+	# add a subscriber to get the robot's initial position
+	rospy.Subscriber('/ur5e/toolpose', Twist, tool_position_callback)
 	# try slowing this down a bit, see if this fixes our issues...
 	loop_rate = rospy.Rate(3)
 
@@ -76,37 +101,27 @@ if __name__ == '__main__':
 		ball_in_camera_frame.header.frame_id = 'camera_color_optical_frame'
 		ball_in_camera_frame.header.stamp = rospy.get_rostime()
 		# use the coordinates obtained from the sphere fit node:
-		ball_in_camera_frame.point.x = estimated_x_pos
-		ball_in_camera_frame.point.y = estimated_y_pos
-		ball_in_camera_frame.point.z = estimated_z_pos
+		ball_in_camera_frame.point.x = ball_estimated_x_pos
+		ball_in_camera_frame.point.y = ball_estimated_y_pos
+		ball_in_camera_frame.point.z = ball_estimated_z_pos
 
 		
 		# now convert the ball to the base frame:
 		ball_in_base_frame = tfBuffer.transform(ball_in_camera_frame, 'base', rospy.Duration(1.0))
 		
+		# add the start position obtained from the /ur5e/toolpose subscriber to the plan
+		create_new_pt(initial_tool_x_pos, initial_tool_y_pos, initial_tool_z_pos, roll, pitch, yaw, plan)
+		
 		if not plan_generated:
+			# above ball point
+			create_new_pt(ball_in_base_frame.point.x, ball_in_base_frame.point.y, ball_in_base_frame.point.z + 0.1, roll, pitch, yaw, plan)
+			# center of the ball, 2cm offset to account for vision node imperfections
+			create_new_pt(ball_in_base_frame.point.x, ball_in_base_frame.point.y, ball_in_base_frame.point.z+0.02, roll, pitch, yaw, plan)
+			# above drop point
+			create_new_pt(ball_in_base_frame.point.x + 0.3, ball_in_base_frame.point.y + 0.1, ball_in_base_frame.point.z+0.2, roll, pitch, yaw, plan)
+			# the drop point
+			create_new_pt(ball_in_base_frame.point.x + 0.3, ball_in_base_frame.point.y + 0.1, ball_in_base_frame.point.z+0.1, roll, pitch, yaw, plan)
 			
-			# adjust starting pt to be a little closer to being above the ball, see if that helps...
-			# TODO: add subscriber to ur5e/toolpose instead of manually setting the initial pt.
-			#	do this outside of loop, only read once when you add the subscriber.
-			initial_pt = create_new_pt(-0.014, -0.409, 0.274, 3.126, 0.0166, 1.5308)
-			plan.points.append(initial_pt)
-			
-			above_ball_pt = create_new_pt(ball_in_base_frame.point.x, ball_in_base_frame.point.y, ball_in_base_frame.point.z + 0.1, 3.126, 0.0166, 1.5308)
-			# TODO: add append step to create_new_pt fcn
-			plan.points.append(above_ball_pt)
-			
-			# TODO: okay just add another intermediate pt here I guess.
-			ball_center_pt = create_new_pt(ball_in_base_frame.point.x, ball_in_base_frame.point.y, ball_in_base_frame.point.z+0.02, 3.126, 0.0166, 1.5308)
-			plan.points.append(ball_center_pt)
-			
-			# add back in other pts from simple planner once this is working.
-			above_drop_pt = create_new_pt(ball_in_base_frame.point.x + 0.3, ball_in_base_frame.point.y + 0.1, ball_in_base_frame.point.z+0.2, 3.126, 0.0166, 1.5308)
-			plan.points.append(above_drop_pt)
-			
-			drop_pt = create_new_pt(ball_in_base_frame.point.x + 0.3, ball_in_base_frame.point.y + 0.1, ball_in_base_frame.point.z+0.1, 3.126, 0.0166, 1.5308)
-			
-			plan.points.append(drop_pt)
 			plan_generated = True
 			
 		# publish the plan

@@ -33,13 +33,13 @@ if __name__ == '__main__':
 		pos_cmd_point.positions.append(0.0)
 	# set the ideal time to destination
 	pos_cmd_point.time_from_start = rospy.Duration(1.0) # here one second 
-	# just change the value of the command for the second joint
-	pos_cmd_point.positions[0] = -1.63
-	pos_cmd_point.positions[1] = -1.63
-	# modified a bit to pan closer to being above the ball compared to values from report 1
-	pos_cmd_point.positions[2] = 1.89
-	pos_cmd_point.positions[3] = -1.51
-	pos_cmd_point.positions[4] = 1.63
+	# just going to use the values from the real robot, keep this consistent.
+	pos_cmd_point.positions[0] = -1.47
+	pos_cmd_point.positions[1] = -1.79
+	pos_cmd_point.positions[2] = -1.28
+	pos_cmd_point.positions[3] = 1.71
+	pos_cmd_point.positions[4] = -1.58
+	pos_cmd_point.positions[5] = -1.24
 	# add the trajectory point to the command
 	pos_cmd.points.append(pos_cmd_point)
 	# define a message header	
