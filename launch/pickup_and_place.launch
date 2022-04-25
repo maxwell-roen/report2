@@ -1,6 +1,6 @@
 <launch>
 	<!-- This launch script does everything up to running the manual_initialization node. 
- 		You can't guarentee the order these statements will be executed in, it was causing issues.
+ 		You can't guarantee the order these statements will be executed in, it was causing issues.
 		Workflow: Run this script, run the manual init node, kill the manual init node, run the other launchfile in this dir.
 	-->
 
