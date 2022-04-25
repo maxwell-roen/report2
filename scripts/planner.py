@@ -9,6 +9,7 @@ from tf.transformations import *
 from ur5e_control.msg import Plan
 from geometry_msgs.msg import Twist
 from robot_vision_lectures.msg import SphereParams
+from std_msgs.msg import UInt8
 
 
 ball_estimated_x_pos = 0
@@ -23,12 +24,13 @@ pitch = 0
 yaw = 0
 
 
-# modify this to just add it to the plan, don't return it.
-def create_new_pt(linear_x, linear_y, linear_z, angular_x, angular_y, angular_z, plan):
+# gripper modes: 0 -> regular motion, 1 -> open the gripped, 2 -> close the gripper
+def create_new_pt(linear_x, linear_y, linear_z, angular_x, angular_y, angular_z, plan, gripper_mode):
 	"""
 	Adds new Twist message with given params to the given plan.	
 	"""
 	pt = Twist()
+	mode = UInt8()
 	pt.linear.x = linear_x
 	pt.linear.y = linear_y
 	pt.linear.z = linear_z
@@ -37,6 +39,7 @@ def create_new_pt(linear_x, linear_y, linear_z, angular_x, angular_y, angular_z,
 	pt.angular.z = angular_z
 	
 	plan.points.append(pt)
+	plan.modes.append(mode)
 
 
 def sphere_params_callback(params):
@@ -110,17 +113,17 @@ if __name__ == '__main__':
 		ball_in_base_frame = tfBuffer.transform(ball_in_camera_frame, 'base', rospy.Duration(1.0))
 		
 		# add the start position obtained from the /ur5e/toolpose subscriber to the plan
-		create_new_pt(initial_tool_x_pos, initial_tool_y_pos, initial_tool_z_pos, roll, pitch, yaw, plan)
+		create_new_pt(initial_tool_x_pos, initial_tool_y_pos, initial_tool_z_pos, roll, pitch, yaw, plan, 0)
 		
 		if not plan_generated:
-			# above ball point
-			create_new_pt(ball_in_base_frame.point.x, ball_in_base_frame.point.y, ball_in_base_frame.point.z + 0.1, roll, pitch, yaw, plan)
-			# center of the ball, 2cm offset to account for vision node imperfections
-			create_new_pt(ball_in_base_frame.point.x, ball_in_base_frame.point.y, ball_in_base_frame.point.z+0.02, roll, pitch, yaw, plan)
+			# above ball point, gripper mode 1 opens gripper
+			create_new_pt(ball_in_base_frame.point.x, ball_in_base_frame.point.y, ball_in_base_frame.point.z + 0.1, roll, pitch, yaw, plan, 1)
+			# center of the ball, 2cm offset to account for vision node imperfections. gripper mode 2 closes gripper
+			create_new_pt(ball_in_base_frame.point.x, ball_in_base_frame.point.y, ball_in_base_frame.point.z+0.02, roll, pitch, yaw, plan, 2)
 			# above drop point
-			create_new_pt(ball_in_base_frame.point.x + 0.3, ball_in_base_frame.point.y + 0.1, ball_in_base_frame.point.z+0.2, roll, pitch, yaw, plan)
+			create_new_pt(ball_in_base_frame.point.x + 0.3, ball_in_base_frame.point.y + 0.1, ball_in_base_frame.point.z+0.2, roll, pitch, yaw, plan, 0)
 			# the drop point
-			create_new_pt(ball_in_base_frame.point.x + 0.3, ball_in_base_frame.point.y + 0.1, ball_in_base_frame.point.z+0.1, roll, pitch, yaw, plan)
+			create_new_pt(ball_in_base_frame.point.x + 0.3, ball_in_base_frame.point.y + 0.1, ball_in_base_frame.point.z+0.1, roll, pitch, yaw, plan, 1)
 			
 			plan_generated = True
 			
