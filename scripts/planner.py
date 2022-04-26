@@ -38,6 +38,7 @@ def create_new_pt(linear_x, linear_y, linear_z, angular_x, angular_y, angular_z,
 	pt.angular.y = angular_y
 	pt.angular.z = angular_z
 	
+	mode.data = gripper_mode
 	plan.points.append(pt)
 	plan.modes.append(mode)
 
@@ -112,18 +113,23 @@ if __name__ == '__main__':
 		# now convert the ball to the base frame:
 		ball_in_base_frame = tfBuffer.transform(ball_in_camera_frame, 'base', rospy.Duration(1.0))
 		
-		# add the start position obtained from the /ur5e/toolpose subscriber to the plan
-		create_new_pt(initial_tool_x_pos, initial_tool_y_pos, initial_tool_z_pos, roll, pitch, yaw, plan, 0)
+		y_offset = -0.01
 		
 		if not plan_generated:
+			# add the start position obtained from the /ur5e/toolpose subscriber to the plan
+			create_new_pt(initial_tool_x_pos, initial_tool_y_pos, initial_tool_z_pos, roll, pitch, yaw, plan, 0)
 			# above ball point, gripper mode 1 opens gripper
-			create_new_pt(ball_in_base_frame.point.x, ball_in_base_frame.point.y, ball_in_base_frame.point.z + 0.1, roll, pitch, yaw, plan, 1)
+			create_new_pt(ball_in_base_frame.point.x, ball_in_base_frame.point.y + y_offset, ball_in_base_frame.point.z + 0.1, roll, pitch, yaw, plan, 0)
+			# center of ball, gripper on approach
+			create_new_pt(ball_in_base_frame.point.x, ball_in_base_frame.point.y + y_offset, ball_in_base_frame.point.z+0.02, roll, pitch, yaw, plan, 0)
 			# center of the ball, 2cm offset to account for vision node imperfections. gripper mode 2 closes gripper
-			create_new_pt(ball_in_base_frame.point.x, ball_in_base_frame.point.y, ball_in_base_frame.point.z+0.02, roll, pitch, yaw, plan, 2)
+			create_new_pt(ball_in_base_frame.point.x, ball_in_base_frame.point.y + y_offset, ball_in_base_frame.point.z+0.02, roll, pitch, yaw, plan, 2)
 			# above drop point
 			create_new_pt(ball_in_base_frame.point.x + 0.3, ball_in_base_frame.point.y + 0.1, ball_in_base_frame.point.z+0.2, roll, pitch, yaw, plan, 0)
+			
+			create_new_pt(ball_in_base_frame.point.x + 0.3, ball_in_base_frame.point.y + 0.1, ball_in_base_frame.point.z+0.02, roll, pitch, yaw, plan, 0)
 			# the drop point
-			create_new_pt(ball_in_base_frame.point.x + 0.3, ball_in_base_frame.point.y + 0.1, ball_in_base_frame.point.z+0.1, roll, pitch, yaw, plan, 1)
+			create_new_pt(ball_in_base_frame.point.x + 0.3, ball_in_base_frame.point.y + 0.1, ball_in_base_frame.point.z+0.02, roll, pitch, yaw, plan, 1)
 			
 			plan_generated = True
 			
